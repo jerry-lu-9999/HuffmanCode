@@ -1,0 +1,307 @@
+import java.io.*;
+import java.util.*;
+
+// Author: Linzan Ye, Jiahao Lu
+
+public class HuffmanSubmit implements Huffman {
+  
+	// Instance variables
+	static HashMap<Character, Integer> freq = null;
+	static ArrayList<Character> freqArr = new ArrayList<Character>();
+	static int charPos = 0;
+ 
+	// Main method
+	public static void main(String[] args) {
+		   Huffman  huffman = new HuffmanSubmit();
+		   huffman.encode("alice30.txt", "ur.enc", "freqFile.txt");
+		   
+		   System.out.println(freq.get('.'));
+		   System.out.println(freq.get('A'));
+		   // huffman.decode("ur.enc", "ur_dec.jpg", "freq.txt");
+		   // After decoding, both ur.jpg and ur_dec.jpg should be the same. 
+		   // On linux and mac, you can use `diff' command to check if they are the same. 
+	}
+	
+	public void encode(String inputFile, String outputFile, String freqFile){
+		// TODO: Your code here
+		BinaryIn in = new BinaryIn(inputFile);
+		scanFrequency(in);
+		createFreqFile(freq, freqFile);
+   }
+
+
+   public void decode(String inputFile, String outputFile, String freqFile){
+		// TODO: Your code here
+   }
+   
+   public void scanFrequency(BinaryIn in) {
+	   freq = new HashMap<Character, Integer>(); 
+	   while(!in.isEmpty()) {
+		   char c = in.readChar();
+		   if (freq.containsKey(c)) {
+			   freq.put(c, freq.get(c) + 1);
+		   } else {
+			   freqArr.add(c);
+			   freq.put(c, 1);
+		   }
+	   }
+   }
+   
+   public void createFreqFile(HashMap<Character, Integer> a, String file) {
+	   BinaryOut out = new BinaryOut(file);
+	   for (int i = 0; i < freqArr.size(); i++) {
+		   out.write(asciiToBinary(freqArr.get(i).toString()));
+		   out.write(": ");
+		   out.write(freq.get(freqArr.get(i)).toString());
+		   out.write(System.getProperty("line.separator"));;
+	   }
+       out.flush();
+   }
+   
+   public static String asciiToBinary(String asciiString){
+       
+       byte[] bytes = asciiString.getBytes();
+       StringBuilder binary = new StringBuilder();
+       for (byte b : bytes)
+       {
+          int val = b;
+          for (int i = 0; i < 8; i++)
+          {
+             binary.append((val & 128) == 0 ? 0 : 1);
+             val <<= 1;
+          }
+         // binary.append(' ');
+       }
+       return binary.toString();
+   }
+   
+   public static void buildHuffTree() {
+	   HuffmanSubmit test = new HuffmanSubmit();
+	   HuffmanTree huff = test.new HuffmanTree();
+	   
+   }
+   
+   // Code reference: Java algorithm and data structure: chapter 5.6 huffman coding trees
+   interface HuffBaseNode<E> {
+	   public boolean isLeaf();
+	   public int weight = 0;
+	public int weight();
+   }
+   
+   class HuffLeafNode<E> implements HuffBaseNode<E> {
+	   private E element;
+	   private int weight;
+	   
+	   public HuffLeafNode(E element, int weight) {
+		   this.element = element;
+		   this.weight = weight;
+	   }
+	   public E element() {
+		   return element;
+	   }
+	   public int weight() {
+		   return weight;
+	   }
+	   public boolean isLeaf() {
+		   return true;
+	   }
+   }
+   class HuffInternalNode<E> implements HuffBaseNode<E> {
+	   private int weight;
+	   private HuffBaseNode<E> left;
+	   private HuffBaseNode<E> right;
+	   
+	   public HuffInternalNode (HuffBaseNode<E> lt, HuffBaseNode<E> rt, int wt) {
+		   left = lt; 
+		   right = rt;
+		   weight = wt;
+	   }
+	   public boolean isLeaf() {
+		   return false;
+	   }
+	   public HuffBaseNode<E> left() {
+		   return left;
+	   }
+	   public HuffBaseNode<E> right() {
+		   return right;
+	   }
+	   public int weight() {
+		   return weight;
+	   }
+   }
+   class HuffTree<E> implements Comparable<HuffTree<E>> {
+	   private HuffBaseNode<E> root;
+	   
+	   public HuffTree (E el, int wt) {
+		   root = new HuffLeafNode<E>(el, wt);
+	   }
+	   public HuffTree (HuffBaseNode<E> l, HuffBaseNode<E> r, int wt) {
+		   
+	   }
+	   public HuffBaseNode<E> root() {
+		   return root;
+	   }
+	   public int weight() {
+		   return root.weight;
+	   }
+	   public int compareTo(HuffTree<E> ht) {
+		   if (root.weight() < ht.weight()) return - 1;
+		    else if (root.weight() == ht.weight()) return 0;
+		    else return 1;
+	   }
+   }
+   class MinHeap<E extends Comparable<? super E>> {
+	   private E[] Heap;
+	   private int size;
+	   private int n;
+	   public MinHeap(E[] h, int num, int max) { 
+		   Heap = h;  n = num;  size = max;  buildheap(); 
+	   }
+	   public int heapsize() {
+		   return n;
+	   }
+	   public boolean isLeaf(int pos) {
+		   return (pos >= n/2) && (pos < n);
+	   }
+	   public int leftchild(int pos) {
+		   assert pos < n/2 : "Position has no left child";
+		   return 2*pos + 1;
+	   }
+	   public int rightchild(int pos) {
+		   assert pos < (n-1)/2 : "Position has no right child";
+		   return 2*pos + 2;
+	   }
+	   public int parent(int pos) {
+		   assert pos > 0 : "Position has no parent";
+		   return (pos-1)/2;
+	   }
+	   public void buildheap() {
+		   for (int i=n/2-1; i>=0; i--) 
+			   siftdown(i);
+	   }
+	   public void insert(E val) {
+		   assert n < size : "Heap is full";
+		   int curr = n++;
+		   Heap[curr] = val;
+		   while ((curr != 0)  && (Heap[curr].compareTo(Heap[parent(curr)]) < 0)) {
+			   swap(Heap, curr, parent(curr));
+			   curr = parent(curr);
+		   }
+	   }
+	   
+	   private void siftdown(int pos) {
+		   assert (pos >= 0) && (pos < n) : "Illegal heap position";
+		   while (!isLeaf(pos)) {
+			   int j = leftchild(pos);
+			    if ((j<(n-1)) && (Heap[j].compareTo(Heap[j+1]) > 0)) {
+			    	j++;
+			    }
+			    if (Heap[pos].compareTo(Heap[j]) <= 0) {
+			    	return;
+			    }
+			    swap(Heap, pos, j);
+			    pos = j;
+		   }
+	   }
+	   public E removemin() {
+		   assert n > 0 : "Removing from empty heap";
+		   swap(Heap, 0, --n);
+		   if (n != 0) {
+			   siftdown(0);
+		   }
+		   return Heap[n];
+	   }
+	   public E remove(int pos) {
+		   assert (pos >= 0) && (pos < n) : "Illegal heap position";
+		   if (pos == (n-1)) {
+			   n--;
+		   } else {
+			   swap(Heap, pos, --n);
+			   while ((pos > 0) && (Heap[pos].compareTo(Heap[parent(pos)]) < 0)) {
+				   swap(Heap, pos, parent(pos));
+				   pos = parent(pos);
+			   }
+			   if (n != 0) siftdown(pos);
+		   }
+		   return Heap[n];
+	   }
+	   
+	   public <E> void swap(E[] arr, int a, int b) {
+		   E temp = arr[a];
+		   arr[a] = arr[b];
+		   arr[b] = temp;			   
+	   }
+
+   }
+   class HuffmanTree {
+	   private MinHeap<HuffTree<Character>> Hheap;
+	   private HuffTree<Character>[] TreeArray;
+	   private int total = 0;  // Total weight of codes
+	   private Vector<Code> codeTable = new Vector<Code>();
+	   
+	   private HuffTree<Character> buildTree() {
+		   HuffTree<Character> tmp1, tmp2, tmp3 = null;
+		   while (Hheap.heapsize() > 1) { // While two items left
+		     tmp1 = Hheap.removemin();
+		     tmp2 = Hheap.removemin();
+		     tmp3 = new HuffTree<Character>(tmp1.root(), tmp2.root(),
+		                              tmp1.weight() + tmp2.weight());
+		     Hheap.insert(tmp3);   // Return new tree to heap
+		   }
+		   return tmp3;            // Return the tree
+	   }
+	   void readFreqs(BufferedReader d) throws IOException {
+		   String line;
+		   char letter;
+		   int freq;
+
+		   line = d.readLine();
+		   assert (line != null) : "Bad input file";
+		   int count = Integer.parseInt(line);
+		   TreeArray = (HuffTree<Character>[])new HuffTree[count];
+		   for (int i=0; i<count; i++) {
+		     // process the entry, creating a new HuffTree
+		     line = d.readLine();
+		     assert (line != null) : "Not enough characters";
+		     letter = line.charAt(0);
+		     freq = Integer.parseInt(line.substring(2));
+		     TreeArray[i] = new HuffTree<Character>(letter, freq);
+		   }
+		   Hheap = new MinHeap<HuffTree<Character>>(TreeArray, count, count);
+		 }
+	   private int getindex(char codeword)
+	   {
+	     int i;
+	     for (i=0; i < codeTable.size(); i++)
+	       if (codeword == codeTable.elementAt(i).data())
+	         return i;
+	     return i; // Not found
+	   }
+	   void outputTree(HuffBaseNode<Character> node, String prefix) {
+		   assert node != null : "Bad input tree";
+		   // This is a full binary tree so must not be null subtree
+		   if (node.isLeaf()) {
+		     System.out.println(((HuffLeafNode<Character>)node).element() + "\t" + prefix);
+		     char temp  = ((HuffLeafNode<Character>)node).element();
+		     codeTable.addElement(new Code(temp, prefix));
+		     total += prefix.length() * node.weight();
+		   }
+		   else {
+		     outputTree(((HuffInternalNode)node).left(), prefix + "0");
+		     outputTree(((HuffInternalNode)node).right(), prefix + "1");
+		   }
+		 }
+	   
+   }
+   public class Code { // One code stored in a code table
+	   private char data;
+	   private String code;
+
+	   public Code (char d, String c)
+	   { data = d;  code = c; }
+
+	   public char data() { return data; }
+	   public String code() { return code; }
+	 }
+
+}
