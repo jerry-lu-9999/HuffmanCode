@@ -6,149 +6,161 @@ import java.util.*;
 public class HuffmanSubmit implements Huffman {
 
 	// Instance variables
-	static HashMap<Character, Integer> freq = null;		// Store characters and frequency for encode method
-	static HashMap<Character, Integer> freqIn = null;	// Store characters and frequency for decode method
-	static HashMap<String, Character> huffCode = null;	// How to traverse to the character in huffman tree
-	static ArrayList<Character> freqArr;		// Store what characters are in the file for encode method
-	static ArrayList<Character> freqArrDec;		// Store what characters are in the file for decode method 
-	HuffTree htEnc;				// HuffTree created for encode method
-	HuffTree htDec;				// HuffTree created for decode method
-	HuffTrees<Character> htNode;		// HuffTrees instance for encode method
-	HuffTrees<Character> htNodeDec;		// HuffTrees instance for decode method
+	static HashMap<Character, Integer> freq = null; // Store characters and frequency for encode method
+	static HashMap<Character, Integer> freqIn = null; // Store characters and frequency for decode method
+	static HashMap<String, Character> huffCode = null; // How to traverse to the character in huffman tree
+	static ArrayList<Character> freqArr; // Store what characters are in the file for encode method
+	static ArrayList<Character> freqArrDec; // Store what characters are in the file for decode method
+	HuffTree htEnc; // HuffTree for encode
+	HuffTree htDec; // HuffTree for decode
+	HuffTrees<Character> htNode; // HuffTrees instance for encode method
+	HuffTrees<Character> htNodeDec; // HuffTrees instance for decode method
 
+	static boolean compareTrees(HuffNode<Character> h1, HuffNode<Character> h2) {
+		if (h1.isLeaf() && h2.isLeaf()) {
+			return h1.value() == h2.value() && ((HuffLeaf)h1).weight() == ((HuffLeaf)h2).weight();
+		}
+		else {
+			return compareTrees(((HuffInternalNode)h1).left(), ((HuffInternalNode)h2).left()) 
+					&& compareTrees(((HuffInternalNode)h1).right(), ((HuffInternalNode)h2).right());
+		} 
+	}
+	
 	// Main method
 	public static void main(String[] args) {
-		
-		HuffmanSubmit huffman = new HuffmanSubmit();		// Creating an instance of HuffmanSubmit to use inner classes
-		
+
+		HuffmanSubmit huffman = new HuffmanSubmit(); // Creating an instance of HuffmanSubmit to use inner classes
+
 		// Encode & decode methods
-		huffman.encode("alice30.txt", "alice30.enc", "freq.txt");
-		huffman.encode("abc.txt", "abc.enc", "freqabc.txt");
-		huffman.decode("alice30.enc", "alice30dec.txt", "freq.txt");
-		huffman.decode("abc.enc", "abcdec.txt", "freqabc.txt");
 		
+		huffman.encode("alice30.txt", "alice30enc.txt", "freq.txt");
+		//huffman.encode("mur.txt", "murenc.txt", "freqmur.txt");
+		huffman.decode("alice30enc.txt", "alice30dec.txt", "freq.txt");
+		//huffman.decode("murenc.txt", "murdec.txt", "freqmur.txt");
 		
-		/*huffman.encode("ur.jpg", "urenc.txt", "freq.txt");
-		huffman.decode("urenc.txt", "urdec.jpg", "freq.txt");*/
-		
+		System.out.println(compareTrees(huffman.htNode.root, huffman.htNodeDec.root));
+
+		//huffman.encode("ur.jpg", "urenc.txt", "freqp.txt");
+		//huffman.decode("urenc.txt", "urdec.jpg", "freqp.txt");
+
 		System.out.println("\n\n----------Test----------");
 		System.out.println(huffman.htEnc.code.get('l'));
-		System.out.println(huffman.htEnc.code.get('e'));
+		System.out.println(huffman.htDec.code.get('e'));
 
 		// After decoding, both ur.jpg and ur_dec.jpg should be the same.
 		// On linux and mac, you can use `diff' command to check if they are the same.
 	}
 
 	public void encode(String inputFile, String outputFile, String freqFile) {
-		BinaryIn in = new BinaryIn(inputFile);		// Initialize binary in
-		freqArr = new ArrayList<Character>();		// Initialize freqArr each time the method is called
-		scanFrequency(in);						// Updating the hashmap which stores the characters and their frequency
-		createFreqFile(freq, freqFile);			// Create frequency file through the hashmap freq
-		htEnc = new HuffTree();					// Initialize htEnc each time the method is called
-		htEnc.readHashFreq(freqArr, freq);		// Create minheap
-		// htEnc.printHeap();	// print out minheap
-		htNode = htEnc.buildTree();				// Build huffman tree from the minheap
-		htEnc.establishCode(htNode.root, "");	// Get huffman code for each character
-		// htEnc.traverse(htNode.root);			// print out huffman tree
-		createOutputFile(inputFile, outputFile, htEnc);		// Generate encrypted file
+		BinaryIn in = new BinaryIn(inputFile); // Initialize binary in
+		freqArr = new ArrayList<Character>(); // Initialize freqArr each time the method is called
+		scanFrequency(in); // Updating the hashmap which stores the characters and their frequency
+		createFreqFile(freq, freqFile); // Create frequency file through the hashmap freq
+		htEnc = new HuffTree(); // Initialize htEnc each time the method is called
+		htEnc.readHashFreq(freqArr, freq); // Create minheap
+		// htEnc.printHeap(); // print out minheap
+		htNode = htEnc.buildTree(); // Build huffman tree from the minheap
+		
+		
+		
+		htEnc.establishCode(htNode.root, ""); // Get huffman code for each character
+		// htEnc.traverse(htNode.root); // print out huffman tree
+		createOutputFile(inputFile, outputFile, htEnc); // Generate encrypted file
+		
 	}
 
 	public void decode(String inputFile, String outputFile, String freqFile) {
-		BinaryOut out = new BinaryOut(outputFile);		// Initialize binary in
-		freqArrDec = new ArrayList<Character>();		// Initialize freqArrDec each time the method is called
-		readFreqFile(freqFile);					// Get characters and their frequency from the frequency file
-		htDec = new HuffTree();					// Initialize htDec each time the method is called
-		htDec.readHashFreq(freqArrDec, freqIn);	// Build minheap according to the characters and frequency
-		// htDec.printHeap();	// print out minheap	
-		htNodeDec = htDec.buildTree();			// 
-		htDec.establishCode(htNodeDec.root, "");
-		putHuffCode(htDec.code);
-		
+		BinaryOut out = new BinaryOut(outputFile); // Initialize binary out
+		freqArrDec = new ArrayList<Character>(); // Initialize freqArrDec each time the method is called
+		readFreqFile(freqFile); // Get characters and their frequency from the frequency file
+		htDec = new HuffTree(); // Initialize htDec each time the method is called
+		htDec.readHashFreq(freqArrDec, freqIn); // Build minheap according to the characters and frequency
+		// htDec.printHeap(); // print out minheap
+		htNodeDec = htDec.buildTree(); // Build huffman tree from the minheap
+		htDec.establishCode(htNodeDec.root, "");// Get huffman tree from the minheap
+		putHuffCode(htDec.code); // Update huffman code for each character
+		writeDecodedFile(out, inputFile); // Decode the encrypted
+
+		out.flush();
+	}
+
+	public void writeDecodedFile(BinaryOut out, String inputFile) {
 		String binaryChar = "";
 		BinaryIn in = new BinaryIn(inputFile);
 		do {
-			if (huffCode.containsKey(binaryChar)) {
-				out.write(huffCode.get(binaryChar));
-				System.out.print("BinChar:");
-				System.out.println(binaryChar);
-				System.out.print("letter: ");
-				System.out.println(huffCode.get(binaryChar));
-				binaryChar = "";
+			if (huffCode.containsKey(binaryChar)) { // If reached a node in huffman tree
+				out.write(huffCode.get(binaryChar)); // Write the character
+				
+				binaryChar = ""; // Reset the binaryChar for new access
 			} else {
-				char c = in.readChar();
-				binaryChar += Character.toString(c);
-				System.out.println(binaryChar);
+				boolean c = in.readBoolean();
+				// char c = in.readChar(); // continue reading the file
+				if (c) {
+					binaryChar += "1";
+				} else {
+					binaryChar += "0";
+				}
+					//binaryChar += Character.toString(c); // read more code
+				
 			}
-		} while((!in.isEmpty()));
+		} while ((!in.isEmpty()));
 
-		// Check one more time
+		// Check one more time as the last code is not checked
 		if (huffCode.containsKey(binaryChar)) {
 			out.write(huffCode.get(binaryChar));
 		}
-		out.flush();
 	}
-	
+
 	public void createOutputFile(String inputFile, String output, HuffTree ht) {
 		BinaryIn in = new BinaryIn(inputFile);
 		BinaryOut out = new BinaryOut(output);
 
 		while (!in.isEmpty()) {
 			char c = in.readChar();
-			out.write(ht.code.get(c));
+			out.write(ht.code.get(c)); // Encode according to the huffman code
 		}
 		out.flush();
 
 	}
 
 	public void scanFrequency(BinaryIn in) {
-		freq = new HashMap<Character, Integer>();
+		freq = new HashMap<Character, Integer>(); // Initialize hashmap each time the method is called
 		while (!in.isEmpty()) {
 			char c = in.readChar();
-			if (freq.containsKey(c)) {
-				freq.put(c, freq.get(c) + 1);
-			} else {
-				freqArr.add(c);
-				freq.put(c, 1);
+			if (freq.containsKey(c)) { // If already has the key in hashmap
+				freq.put(c, freq.get(c) + 1); // increase the frequency by one
+			} else { // Else not already in hashmap
+				freqArr.add(c); // add to the ArrayList
+				freq.put(c, 1); // add to the hashmap
 			}
-		}	
-	}
-	public void initializeExtendedAscii() {
-		freq.put('Ç', 0);
-		freq.put('ü', 0);
-		freq.put('é', 0);
+		}
 	}
 
 	public void createFreqFile(HashMap<Character, Integer> a, String file) {
 		BinaryOut out = new BinaryOut(file);
 		for (int i = 0; i < freqArr.size(); i++) {
-			System.out.println("freqarr: " + freqArr.get(i).toString());
-			System.out.println("ascii: " + asciiToBinary(freqArr.get(i).toString()));
-			out.write(asciiToBinary(freqArr.get(i).toString()));
-			out.write(": ");
-			System.out.println(freq.get(freqArr.get(i)));
-			out.write(freq.get(freqArr.get(i)).toString());
-			out.write(System.getProperty("line.separator"));
+			out.write(asciiToBinary(freqArr.get(i).toString())); // write binary representation of char to freqFile
+			out.write(": "); // Separate by ": "
+			out.write(freq.get(freqArr.get(i)).toString()); // write the frequency
+			out.write(System.getProperty("line.separator")); // separate a line
 		}
 		out.flush();
 	}
 
-	public static String asciiToBinary(String asciiString){
-	       
-	       byte[] bytes = asciiString.getBytes();
-	       StringBuilder binary = new StringBuilder();
-	       for (byte b : bytes)
-	       {
-	          int val = b;
-	          for (int i = 0; i < 8; i++)
-	          {
-	             binary.append((val & 128) == 0 ? 0 : 1);
-	             val <<= 1;
-	          }
-	         // binary.append(' ');
-	       }
-	       return binary.toString();
-	   }
-	
+	public static String asciiToBinary(String asciiString) { // Convert ascii value to binary
+		byte[] bytes = asciiString.getBytes();
+		StringBuilder binary = new StringBuilder();
+		for (byte b : bytes) {
+			int val = b;
+			for (int i = 0; i < 8; i++) {
+				binary.append((val & 128) == 0 ? 0 : 1);
+				val <<= 1;
+			}
+			// binary.append(' ');
+		}
+		return binary.toString();
+	}
+
 	public void readFreqFile(String freqFile) {
 		Scanner in = null;
 		try {
@@ -158,25 +170,25 @@ public class HuffmanSubmit implements Huffman {
 			System.out.println("Error getting the file.");
 			return;
 		}
-		// Initialize hashmap
+		// Initialize hashmap each time the method is called
 		freqIn = new HashMap<Character, Integer>();
 		// Initialize variable to store readLine
-        String line = "";
-        // Initialize array to store ASCII input from txt file
-        String[] ascChar = {""};
-        char charIn;
-        try {
+		String line = "";
+		// Initialize array to store ASCII input from txt file
+		String[] ascChar = { "" };
+		char charIn;
+		try {
 			// Continue reading the file till reaching EOF mark or the end of the file.
-			while(in.hasNextLine()) {
+			while (in.hasNextLine()) {
 				// Split command into an array of strings
 				line = in.nextLine();
 				ascChar = line.split("\\: ");
 				charIn = (char) binaryDecimal(ascChar[0]);
-				
+
 				freqIn.put(charIn, Integer.parseInt(ascChar[1]));
 				freqArrDec.add(charIn);
 			}
-			
+
 		} catch (ArrayIndexOutOfBoundsException e) {
 			System.out.println("Error: array index out of bound");
 		} catch (Exception e) {
@@ -186,15 +198,16 @@ public class HuffmanSubmit implements Huffman {
 			in.close();
 		}
 	}
+
 	public void putHuffCode(HashMap<Character, String> code) {
-		huffCode = new HashMap<String, Character>();
+		huffCode = new HashMap<String, Character>(); // Initialize huffCode each time the method is called
 		for (int i = 0; i < freqArrDec.size(); i++) {
 			char c = freqArrDec.get(i);
 			huffCode.put(code.get(c), c);
 		}
 	}
 
-	public static int binaryDecimal (String a) {
+	public static int binaryDecimal(String a) {
 		int decimal = 0;
 		for (int i = 0; i < a.length(); i++) {
 			if (a.charAt(i) == '1') {
@@ -203,6 +216,7 @@ public class HuffmanSubmit implements Huffman {
 		}
 		return decimal;
 	}
+
 	public static int decimalBinary(int a) {
 		String binary = "";
 		do {
@@ -215,15 +229,17 @@ public class HuffmanSubmit implements Huffman {
 			} else if (a % 2 == 1) {
 				binary = binary + "1";
 				a = a / 2;
-			} 
+			}
 		} while (a > 0);
-		String temp = ""; int t = 0;
+		String temp = "";
+		int t = 0;
 		for (int i = 0; i < binary.length(); i++) {
-			temp += binary.charAt(binary.length()-1-i);
+			temp += binary.charAt(binary.length() - 1 - i);
 		}
 		return t = Integer.parseInt(temp);
 	}
-	
+
+	// Implementation for HuffTrees<E>
 	class HuffTrees<E> implements Comparable<HuffTrees<E>> {
 
 		private HuffNode<E> root;
@@ -406,10 +422,10 @@ public class HuffmanSubmit implements Huffman {
 
 	class HuffTree {
 		private MinHeap<HuffTrees<Character>> mHeap;
-		private HuffTrees<Character>[] treeArr;
+		private HuffTrees<Character>[] treeArr; // Array to store all trees
 		public HashMap<Character, String> code;
-		
-		public HuffTrees<Character> buildTree() {
+
+		public HuffTrees<Character> buildTree() { // Build tree by minheap
 			HuffTrees<Character> h1, h2, h3 = null;
 			while (mHeap.heapSize() > 1) {
 				h1 = mHeap.extractMin(); // In the later while loops, a tree with children is returned.
@@ -419,12 +435,12 @@ public class HuffmanSubmit implements Huffman {
 			}
 			return h3;
 		}
-		
-		public void setTreeArr(ArrayList<Character> arr) {
+
+		public void setTreeArr(ArrayList<Character> arr) { // Initialize treeArr
 			treeArr = new HuffTrees[arr.size()];
 		}
 
-		public void traverse(HuffNode<Character> hn) {
+		public void traverse(HuffNode<Character> hn) { // print out all elements
 			if (hn.isLeaf()) {
 				System.out.print(((HuffLeaf) hn).value() + " ");
 			} else {
@@ -433,6 +449,7 @@ public class HuffmanSubmit implements Huffman {
 			}
 		}
 
+		// Method to print heap according to parent-child relation
 		public void printHeap() {
 			System.out.println("The elements of the array are: ");
 			int temp = 1;
@@ -451,8 +468,10 @@ public class HuffmanSubmit implements Huffman {
 			System.out.println();
 		}
 
+		// Finalize treeArr by getting characters from ArrayList and HashMap
 		public void readHashFreq(ArrayList<Character> freqA, HashMap<Character, Integer> freqH) {
 			setTreeArr(freqA);
+			
 			for (int i = 0; i < freqA.size(); i++) {
 				char c = freqA.get(i); // Read char
 				int fr = freqH.get(c);
@@ -460,21 +479,23 @@ public class HuffmanSubmit implements Huffman {
 			}
 			mHeap = new MinHeap<HuffTrees<Character>>(treeArr, freqA.size());
 		}
-		
+
+		// Get Huffman code
 		public void establishCode(HuffNode<Character> node, String binary) {
 			initializeCode();
 			getBinaryCode(node, binary);
 		}
+
 		public void initializeCode() {
 			code = new HashMap<Character, String>();
 		}
 
 		public void getBinaryCode(HuffNode<Character> node, String binary) {
-			if (node.isLeaf()) {
-				System.out.println(((HuffLeaf<Character>) node).value() + "\t" + binary + "\t"
+			if (node.isLeaf()) { // return huffman code if the node is a leaf
+				System.out.println("Huffcode:" + ((HuffLeaf<Character>) node).value() + "\t" + binary + "\t"
 						+ ((HuffLeaf<Character>) node).weight);
 				code.put(((HuffLeaf<Character>) node).value(), binary);
-			} else {
+			} else { // Else internal node, if traversing left, add "0"; right, add"1"
 				getBinaryCode(((HuffInternalNode<Character>) node).left, binary + "0");
 				getBinaryCode(((HuffInternalNode<Character>) node).right, binary + "1");
 			}
